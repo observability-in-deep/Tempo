@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shenlong-deployment
+  labels:
+    app: shenlong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shenlong
+  template:
+    metadata:
+      labels:
+        app: shenlong
+    spec:
+      containers:
+      - name: shenlong
+        image: docker.io/mariovalente/shenlong:tracing1.5
+        ports:
+        - containerPort: 3001
+        env:
+        - name: INGRESS_READY
+          value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shenlong-service
+  labels:
+    app: shenlong
+    self-monitor: "true"
+spec:
+  selector:
+    app: shenlong
+  ports:
+    - name: http-web
+      port: 80
+      targetPort: 3001
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shenlong-ingress
+spec:
+  rules:
+  - host: obsevabilityindeep.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: shenlong-service
+            port:
+              number: 80
